@@ -195,6 +195,14 @@ export class MusicQueue {
     return message;
   }
 
+  public async editPlayingMessage() {
+    if (!this.playingMessage) return;
+    await this.playingMessage.edit({
+      content: this.createSongListMessage(),
+      embeds: [this.createSongInfoEmbed(this.songs[0])]
+    });
+  }
+
   private async sendPlayingMessage(newState: any) {
     const song = (newState.resource as AudioResource<Song>).metadata;
 
@@ -256,10 +264,24 @@ export class MusicQueue {
           this.muted = !this.muted;
           if (this.muted) {
             this.resource.volume?.setVolumeLogarithmic(0);
-            this.textChannel.send(i18n.__mf("play.mutedSong", { author: user })).catch(console.error);
+            this.textChannel
+              .send(i18n.__mf("play.mutedSong", { author: user }))
+              .then((m) =>
+                setTimeout(async () => {
+                  await m.delete().catch(console.error);
+                }, 5000)
+              )
+              .catch(console.error);
           } else {
             this.resource.volume?.setVolumeLogarithmic(this.volume / 100);
-            this.textChannel.send(i18n.__mf("play.unmutedSong", { author: user })).catch(console.error);
+            this.textChannel
+              .send(i18n.__mf("play.unmutedSong", { author: user }))
+              .then((m) =>
+                setTimeout(async () => {
+                  await m.delete().catch(console.error);
+                }, 5000)
+              )
+              .catch(console.error);
           }
           break;
 
@@ -271,6 +293,11 @@ export class MusicQueue {
           this.resource.volume?.setVolumeLogarithmic(this.volume / 100);
           this.textChannel
             .send(i18n.__mf("play.decreasedVolume", { author: user, volume: this.volume }))
+            .then((m) =>
+              setTimeout(async () => {
+                await m.delete().catch(console.error);
+              }, 5000)
+            )
             .catch(console.error);
           break;
 
@@ -282,6 +309,11 @@ export class MusicQueue {
           this.resource.volume?.setVolumeLogarithmic(this.volume / 100);
           this.textChannel
             .send(i18n.__mf("play.increasedVolume", { author: user, volume: this.volume }))
+            .then((m) =>
+              setTimeout(async () => {
+                await m.delete().catch(console.error);
+              }, 5000)
+            )
             .catch(console.error);
           break;
 
