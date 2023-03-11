@@ -11,7 +11,7 @@ import {
   VoiceConnectionState,
   VoiceConnectionStatus
 } from "@discordjs/voice";
-import { CommandInteraction, Message, TextChannel, User } from "discord.js";
+import { CommandInteraction, EmbedBuilder, Message, TextChannel, User } from "discord.js";
 import { promisify } from "node:util";
 import { bot } from "../index";
 import { QueueOptions } from "../interfaces/QueueOptions";
@@ -38,6 +38,8 @@ export class MusicQueue {
   private queueLock = false;
   private readyLock = false;
   private stopped = false;
+  private playingMessage: Message | null;
+  private songsMessage: Message | null;
 
   public constructor(options: QueueOptions) {
     Object.assign(this, options);
@@ -112,6 +114,11 @@ export class MusicQueue {
     this.waitTimeout = null;
     this.stopped = false;
     this.songs = this.songs.concat(songs);
+    this.playingMessage &&
+      this.playingMessage.edit({
+        content: this.createSongListMessage(),
+        embeds: [this.createSongInfoEmbed(this.songs[0])]
+      });
     this.processQueue();
   }
 
@@ -122,6 +129,8 @@ export class MusicQueue {
     this.loop = false;
     this.songs = [];
     this.player.stop();
+    this.playingMessage!.delete().catch();
+    this.playingMessage = null;
 
     !config.PRUNING && this.textChannel.send(i18n.__("play.queueEnded")).catch(console.error);
 
@@ -167,22 +176,47 @@ export class MusicQueue {
     }
   }
 
+  private createSongInfoEmbed(song: Song) {
+    return new EmbedBuilder()
+      .setColor(0xfa4d4d)
+      .setAuthor({ name: "재생 중인 곡" })
+      .setTitle(song.title)
+      .setURL(song.url)
+      .setImage(`https://avatar.glue-bot.xyz/youtube-thumbnail/q?url=${song.url}`)
+      .setTimestamp()
+      .setFooter({ text: "Pangkin Music", iconURL: bot.client.user!.displayAvatarURL() });
+  }
+
+  private createSongListMessage() {
+    let message: string = "";
+    this.songs.map((song, index) => {
+      message += `🎶 ${song.title}\n`;
+    });
+    return message;
+  }
+
   private async sendPlayingMessage(newState: any) {
     const song = (newState.resource as AudioResource<Song>).metadata;
 
-    let playingMessage: Message;
-
     try {
-      playingMessage = await this.textChannel.send((newState.resource as AudioResource<Song>).metadata.startMessage());
-
-      await playingMessage.react("⏭");
-      await playingMessage.react("⏯");
-      await playingMessage.react("🔇");
-      await playingMessage.react("🔉");
-      await playingMessage.react("🔊");
-      await playingMessage.react("🔁");
-      await playingMessage.react("🔀");
-      await playingMessage.react("⏹");
+      if (!this.playingMessage) {
+        this.playingMessage = await this.textChannel.send({
+          content: this.createSongListMessage(),
+          embeds: [this.createSongInfoEmbed(song)]
+        });
+        await this.playingMessage.react("⏭");
+        await this.playingMessage.react("⏯");
+        await this.playingMessage.react("🔇");
+        await this.playingMessage.react("🔉");
+        await this.playingMessage.react("🔊");
+        await this.playingMessage.react("🔁");
+        await this.playingMessage.react("🔀");
+        await this.playingMessage.react("⏹");
+      } else
+        await this.playingMessage.edit({
+          content: this.createSongListMessage(),
+          embeds: [this.createSongInfoEmbed(song)]
+        });
     } catch (error: any) {
       console.error(error);
       this.textChannel.send(error.message);
@@ -191,7 +225,7 @@ export class MusicQueue {
 
     const filter = (reaction: any, user: User) => user.id !== this.textChannel.client.user!.id;
 
-    const collector = playingMessage.createReactionCollector({
+    const collector = this.playingMessage.createReactionCollector({
       filter,
       time: song.duration > 0 ? song.duration * 1000 : 600000
     });
@@ -199,7 +233,7 @@ export class MusicQueue {
     collector.on("collect", async (reaction, user) => {
       if (!this.songs) return;
 
-      const member = await playingMessage.guild!.members.fetch(user);
+      const member = await this.playingMessage!.guild!.members.fetch(user);
 
       switch (reaction.emoji.name) {
         case "⏭":
@@ -270,16 +304,6 @@ export class MusicQueue {
         default:
           reaction.users.remove(user).catch(console.error);
           break;
-      }
-    });
-
-    collector.on("end", () => {
-      playingMessage.reactions.removeAll().catch(console.error);
-
-      if (config.PRUNING) {
-        setTimeout(() => {
-          playingMessage.delete().catch();
-        }, 3000);
       }
     });
   }
