@@ -35,12 +35,20 @@ export default {
 
     queue.songs = move(queue.songs, movefromArg - 1, movetoArg == 1 ? 1 : movetoArg - 1);
 
-    interaction.reply({
-      content: i18n.__mf("move.result", {
-        author: interaction.user.id,
-        title: song.title,
-        index: movetoArg == 1 ? 1 : movetoArg
+    queue.editPlayingMessage();
+
+    interaction
+      .reply({
+        content: i18n.__mf("move.result", {
+          author: interaction.user.id,
+          title: song.title,
+          index: movetoArg == 1 ? 1 : movetoArg
+        })
       })
-    });
+      .then(() =>
+        setTimeout(async () => {
+          await interaction.deleteReply().catch(console.error);
+        }, 5000)
+      );
   }
 };

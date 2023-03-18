@@ -13,6 +13,7 @@ import {
 } from "@discordjs/voice";
 import { CommandInteraction, EmbedBuilder, Message, TextChannel, User } from "discord.js";
 import { promisify } from "node:util";
+import { splitBar } from "string-progressbar";
 import { bot } from "../index";
 import { QueueOptions } from "../interfaces/QueueOptions";
 import { config } from "../utils/config";
@@ -29,7 +30,7 @@ export class MusicQueue {
   public readonly textChannel: TextChannel;
   public readonly bot = bot;
 
-  public resource: AudioResource;
+  public resource: AudioResource<Song>;
   public songs: Song[] = [];
   public volume = config.DEFAULT_VOLUME || 100;
   public loop = false;
@@ -39,7 +40,6 @@ export class MusicQueue {
   private readyLock = false;
   private stopped = false;
   private playingMessage: Message | null;
-  private songsMessage: Message | null;
 
   public constructor(options: QueueOptions) {
     Object.assign(this, options);
@@ -125,7 +125,7 @@ export class MusicQueue {
     this.playingMessage &&
       this.playingMessage.edit({
         content: this.createSongListMessage(),
-        embeds: [this.createSongInfoEmbed(this.songs[0])]
+        embeds: [this.createSongInfoEmbed(this.resource)]
       });
     this.processQueue();
   }
@@ -184,7 +184,9 @@ export class MusicQueue {
     }
   }
 
-  private createSongInfoEmbed(song: Song) {
+  private createSongInfoEmbed(resource: AudioResource<Song>) {
+    const song = resource.metadata;
+    const seek = resource.playbackDuration / 1000;
     return new EmbedBuilder()
       .setColor(0xfa4d4d)
       .setAuthor({ name: "재생 중인 곡" })
@@ -192,7 +194,7 @@ export class MusicQueue {
       .setURL(song.url)
       .setImage(`https://avatar.glue-bot.xyz/youtube-thumbnail/q?url=${song.url}`)
       .setTimestamp()
-      .setFooter({ text: "Pangkin Music", iconURL: bot.client.user!.displayAvatarURL() });
+      .setFooter({ text: bot.client.user!.username, iconURL: bot.client.user!.displayAvatarURL() });
   }
 
   private createSongListMessage() {
@@ -207,18 +209,19 @@ export class MusicQueue {
     if (!this.playingMessage) return;
     await this.playingMessage.edit({
       content: this.createSongListMessage(),
-      embeds: [this.createSongInfoEmbed(this.songs[0])]
+      embeds: [this.createSongInfoEmbed(this.resource)]
     });
   }
 
   private async sendPlayingMessage(newState: any) {
     const song = (newState.resource as AudioResource<Song>).metadata;
+    const resource = newState.resource as AudioResource<Song>;
 
     try {
       if (!this.playingMessage) {
         this.playingMessage = await this.textChannel.send({
           content: this.createSongListMessage(),
-          embeds: [this.createSongInfoEmbed(song)]
+          embeds: [this.createSongInfoEmbed(resource)]
         });
         await this.playingMessage.react("⏭");
         await this.playingMessage.react("⏯");
@@ -228,11 +231,7 @@ export class MusicQueue {
         await this.playingMessage.react("🔁");
         await this.playingMessage.react("🔀");
         await this.playingMessage.react("⏹");
-      } else
-        await this.playingMessage.edit({
-          content: this.createSongListMessage(),
-          embeds: [this.createSongInfoEmbed(song)]
-        });
+      } else await this.editPlayingMessage();
     } catch (error: any) {
       console.error(error);
       this.textChannel.send(error.message);
