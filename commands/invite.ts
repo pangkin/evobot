@@ -11,7 +11,7 @@ import { i18n } from "../utils/i18n";
 export default {
   data: new SlashCommandBuilder().setName("invite").setDescription(i18n.__("invite.description")),
   execute(interaction: ChatInputCommandInteraction) {
-    const inviteEmbed = new EmbedBuilder().setTitle(i18n.__mf("Invite me to your server!"));
+    const inviteEmbed = new EmbedBuilder().setColor(0xfa4d4d).setTitle(i18n.__mf("Invite me to your server!"));
 
     // return interaction with embed and button to invite the bot
     const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(

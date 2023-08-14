@@ -65,6 +65,7 @@ export default {
 
     if (queue) {
       queue.songs.push(...playlist.videos);
+      queue.editPlayingMessage();
     } else {
       const newQueue = new MusicQueue({
         interaction,
@@ -90,15 +91,26 @@ export default {
       .setTimestamp();
 
     if (interaction.replied)
-      return interaction.editReply({
-        content: i18n.__mf("playlist.startedPlaylist", { author: interaction.user.id }),
-        embeds: [playlistEmbed]
-      });
+      return interaction
+        .editReply({
+          content: i18n.__mf("playlist.startedPlaylist", { author: interaction.user.id }),
+          embeds: [playlistEmbed]
+        })
+        .then(() =>
+          setTimeout(async () => {
+            await interaction.deleteReply().catch(console.error);
+          }, 5000)
+        );
     interaction
       .reply({
         content: i18n.__mf("playlist.startedPlaylist", { author: interaction.user.id }),
         embeds: [playlistEmbed]
       })
+      .then(() =>
+        setTimeout(async () => {
+          await interaction.deleteReply().catch(console.error);
+        }, 5000)
+      )
       .catch(console.error);
   }
 };

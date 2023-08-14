@@ -33,6 +33,13 @@ export default {
     queue.volume = volumeArg;
     queue.resource.volume?.setVolumeLogarithmic(volumeArg / 100);
 
-    return interaction.reply({ content: i18n.__mf("volume.result", { arg: volumeArg }) }).catch(console.error);
+    return interaction
+      .reply({ content: i18n.__mf("volume.result", { arg: volumeArg }) })
+      .then(() =>
+        setTimeout(async () => {
+          await interaction.deleteReply().catch(console.error);
+        }, 5000)
+      )
+      .catch(console.error);
   }
 };

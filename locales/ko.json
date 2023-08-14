@@ -31,7 +31,11 @@
     "description": "대기열에서 음악을 이동합니다.",
     "errorNotQueue": "대기열에 음악이 없습니다.",
     "usagesReply": "사용 방법: {prefix}move <Queue Number>",
-    "result": "<@{author}> 🚚 **{title}** 를 대기열에서 {index}번째로 옮겼습니다."
+    "result": "<@{author}> 🚚 **{title}** 를 대기열에서 {index}번째로 옮겼습니다.",
+    "args": {
+      "movefrom": "Slot to move from",
+      "moveto": "Slot to move to"
+    }
   },
   "nowplaying": {
     "description": "현재 재생중인 음악을 표시합니다.",
@@ -118,7 +122,8 @@
     "errorAlreadyCollector": "해당 채널에 메세지 컬렉터가 이미 존재합니다.",
     "errorNotChannel": "음성 채널에 들어와 있지 않습니다.",
     "resultEmbedTitle": "**재생할 음악 번호를 답장으로 보내주세요.**",
-    "resultEmbedDesc": "검색 결과: {search}"
+    "resultEmbedDesc": "검색 결과: {search}",
+    "optionQuery": "Search query"
   },
   "shuffle": {
     "description": "대기열 섞기",
@@ -135,7 +140,10 @@
     "usageReply": "사용 방법: {prefix}{name} <Queue Number>",
     "errorNotQueue": "대기열에 음악이 없습니다.",
     "errorNotValid": "대기열에 {length} 개의 음악이 존재합니다.",
-    "result": "<@{author}> ⏭ {arg} 개의 음악을 넘겼습니다."
+    "result": "<@{author}> ⏭ {arg} 개의 음악을 넘겼습니다.",
+    "args": {
+      "number": "The queue number to skip to"
+    }
   },
   "stop": {
     "description": "모든 음악을 멈춥니다.",
@@ -163,5 +171,7 @@
     "errorNotChannel": "음성 채널에 들어와 있지 않습니다.",
     "cooldownMessage": "`{name}` 명령어를 실행하기 전 {time} 초 만큼 기다려주세요.",
     "errorCommand": "명령어 실행에 실패했습니다."
-  }
+  },
+  "Invite me to your server!": "당신의 서버에 초대 해 보세요!",
+  "Invite": "서버에 추가"
 }

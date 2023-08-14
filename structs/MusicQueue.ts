@@ -11,8 +11,9 @@ import {
   VoiceConnectionState,
   VoiceConnectionStatus
 } from "@discordjs/voice";
-import { CommandInteraction, Message, TextChannel, User } from "discord.js";
+import { CommandInteraction, EmbedBuilder, Message, TextChannel, User } from "discord.js";
 import { promisify } from "node:util";
+import { splitBar } from "string-progressbar";
 import { bot } from "../index";
 import { QueueOptions } from "../interfaces/QueueOptions";
 import { config } from "../utils/config";
@@ -29,7 +30,7 @@ export class MusicQueue {
   public readonly textChannel: TextChannel;
   public readonly bot = bot;
 
-  public resource: AudioResource;
+  public resource: AudioResource<Song>;
   public songs: Song[] = [];
   public volume = config.DEFAULT_VOLUME || 100;
   public loop = false;
@@ -38,6 +39,7 @@ export class MusicQueue {
   private queueLock = false;
   private readyLock = false;
   private stopped = false;
+  private playingMessage: Message | null;
 
   public constructor(options: QueueOptions) {
     Object.assign(this, options);
@@ -120,6 +122,11 @@ export class MusicQueue {
     this.waitTimeout = null;
     this.stopped = false;
     this.songs = this.songs.concat(songs);
+    this.playingMessage &&
+      this.playingMessage.edit({
+        content: this.createSongListMessage(),
+        embeds: [this.createSongInfoEmbed(this.resource)]
+      });
     this.processQueue();
   }
 
@@ -130,6 +137,8 @@ export class MusicQueue {
     this.loop = false;
     this.songs = [];
     this.player.stop();
+    this.playingMessage!.delete().catch();
+    this.playingMessage = null;
 
     !config.PRUNING && this.textChannel.send(i18n.__("play.queueEnded")).catch(console.error);
 
@@ -175,22 +184,54 @@ export class MusicQueue {
     }
   }
 
+  private createSongInfoEmbed(resource: AudioResource<Song>) {
+    const song = resource.metadata;
+    const seek = resource.playbackDuration / 1000;
+    return new EmbedBuilder()
+      .setColor(0xfa4d4d)
+      .setAuthor({ name: "재생 중인 곡" })
+      .setTitle(song.title)
+      .setURL(song.url)
+      .setImage(`https://avatar.glue-bot.xyz/youtube-thumbnail/q?url=${song.url}`)
+      .setTimestamp()
+      .setFooter({ text: bot.client.user!.username, iconURL: bot.client.user!.displayAvatarURL() });
+  }
+
+  private createSongListMessage() {
+    let message: string = "";
+    this.songs.map((song, index) => {
+      message += `🎶 ${song.title}\n`;
+    });
+    return message;
+  }
+
+  public async editPlayingMessage() {
+    if (!this.playingMessage) return;
+    await this.playingMessage.edit({
+      content: this.createSongListMessage(),
+      embeds: [this.createSongInfoEmbed(this.resource)]
+    });
+  }
+
   private async sendPlayingMessage(newState: any) {
     const song = (newState.resource as AudioResource<Song>).metadata;
-
-    let playingMessage: Message;
+    const resource = newState.resource as AudioResource<Song>;
 
     try {
-      playingMessage = await this.textChannel.send((newState.resource as AudioResource<Song>).metadata.startMessage());
-
-      await playingMessage.react("⏭");
-      await playingMessage.react("⏯");
-      await playingMessage.react("🔇");
-      await playingMessage.react("🔉");
-      await playingMessage.react("🔊");
-      await playingMessage.react("🔁");
-      await playingMessage.react("🔀");
-      await playingMessage.react("⏹");
+      if (!this.playingMessage) {
+        this.playingMessage = await this.textChannel.send({
+          content: this.createSongListMessage(),
+          embeds: [this.createSongInfoEmbed(resource)]
+        });
+        await this.playingMessage.react("⏭");
+        await this.playingMessage.react("⏯");
+        await this.playingMessage.react("🔇");
+        await this.playingMessage.react("🔉");
+        await this.playingMessage.react("🔊");
+        await this.playingMessage.react("🔁");
+        await this.playingMessage.react("🔀");
+        await this.playingMessage.react("⏹");
+      } else await this.editPlayingMessage();
     } catch (error: any) {
       console.error(error);
       this.textChannel.send(error.message);
@@ -199,13 +240,14 @@ export class MusicQueue {
 
     const filter = (reaction: any, user: User) => user.id !== this.textChannel.client.user!.id;
 
-    const collector = playingMessage.createReactionCollector({
+    const collector = this.playingMessage.createReactionCollector({
       filter,
       time: song.duration > 0 ? song.duration * 1000 : 600000
     });
 
     collector.on("collect", async (reaction, user) => {
       if (!this.songs) return;
+
 
       const member = await playingMessage.guild!.members.fetch(user);
       Object.defineProperty(this.interaction, 'user', {
@@ -233,10 +275,24 @@ export class MusicQueue {
           this.muted = !this.muted;
           if (this.muted) {
             this.resource.volume?.setVolumeLogarithmic(0);
-            this.textChannel.send(i18n.__mf("play.mutedSong", { author: user })).catch(console.error);
+            this.textChannel
+              .send(i18n.__mf("play.mutedSong", { author: user }))
+              .then((m) =>
+                setTimeout(async () => {
+                  await m.delete().catch(console.error);
+                }, 5000)
+              )
+              .catch(console.error);
           } else {
             this.resource.volume?.setVolumeLogarithmic(this.volume / 100);
-            this.textChannel.send(i18n.__mf("play.unmutedSong", { author: user })).catch(console.error);
+            this.textChannel
+              .send(i18n.__mf("play.unmutedSong", { author: user }))
+              .then((m) =>
+                setTimeout(async () => {
+                  await m.delete().catch(console.error);
+                }, 5000)
+              )
+              .catch(console.error);
           }
           break;
 
@@ -248,6 +304,11 @@ export class MusicQueue {
           this.resource.volume?.setVolumeLogarithmic(this.volume / 100);
           this.textChannel
             .send(i18n.__mf("play.decreasedVolume", { author: user, volume: this.volume }))
+            .then((m) =>
+              setTimeout(async () => {
+                await m.delete().catch(console.error);
+              }, 5000)
+            )
             .catch(console.error);
           break;
 
@@ -259,6 +320,11 @@ export class MusicQueue {
           this.resource.volume?.setVolumeLogarithmic(this.volume / 100);
           this.textChannel
             .send(i18n.__mf("play.increasedVolume", { author: user, volume: this.volume }))
+            .then((m) =>
+              setTimeout(async () => {
+                await m.delete().catch(console.error);
+              }, 5000)
+            )
             .catch(console.error);
           break;
 
@@ -281,16 +347,6 @@ export class MusicQueue {
         default:
           reaction.users.remove(user).catch(console.error);
           break;
-      }
-    });
-
-    collector.on("end", () => {
-      playingMessage.reactions.removeAll().catch(console.error);
-
-      if (config.PRUNING) {
-        setTimeout(() => {
-          playingMessage.delete().catch();
-        }, 3000);
       }
     });
   }

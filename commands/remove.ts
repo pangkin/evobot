@@ -36,22 +36,39 @@ export default {
         if (songs.find((songIndex: any) => songIndex - 1 === index)) removed.push(item);
         else return true;
       });
-
-      interaction.reply(
-        i18n.__mf("remove.result", {
-          title: removed.map((song) => song.title).join("\n"),
-          author: interaction.user.id
-        })
-      );
+      queue.editPlayingMessage();
+      interaction
+        .reply(
+          i18n.__mf("remove.result", {
+            title: removed.map((song) => song.title).join("\n"),
+            author: interaction.user.id
+          })
+        )
+        .then(() =>
+          setTimeout(async () => {
+            await interaction.deleteReply().catch(console.error);
+          }, 5000)
+        );
     } else if (!isNaN(+removeArgs) && +removeArgs >= 1 && +removeArgs <= queue.songs.length) {
-      return interaction.reply(
-        i18n.__mf("remove.result", {
-          title: queue.songs.splice(+removeArgs - 1, 1)[0].title,
-          author: interaction.user.id
-        })
-      );
+      return interaction
+        .reply(
+          i18n.__mf("remove.result", {
+            title: queue.songs.splice(+removeArgs - 1, 1)[0].title,
+            author: interaction.user.id
+          })
+        )
+        .then(() => {
+          queue.editPlayingMessage();
+          setTimeout(async () => {
+            await interaction.deleteReply().catch(console.error);
+          }, 5000);
+        });
     } else {
-      return interaction.reply({ content: i18n.__mf("remove.usageReply", { prefix: bot.prefix }) });
+      return interaction.reply({ content: i18n.__mf("remove.usageReply", { prefix: bot.prefix }) }).then(() =>
+        setTimeout(async () => {
+          await interaction.deleteReply().catch(console.error);
+        }, 5000)
+      );
     }
   }
 };
