@@ -249,7 +249,7 @@ export class MusicQueue {
       if (!this.songs) return;
 
 
-      const member = await playingMessage.guild!.members.fetch(user);
+      const member = await this.playingMessage!.guild!.members.fetch(user);
       Object.defineProperty(this.interaction, 'user', {
         value: user
       })
