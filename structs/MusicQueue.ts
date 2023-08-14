@@ -248,7 +248,11 @@ export class MusicQueue {
     collector.on("collect", async (reaction, user) => {
       if (!this.songs) return;
 
-      const member = await this.playingMessage!.guild!.members.fetch(user);
+
+      const member = await playingMessage.guild!.members.fetch(user);
+      Object.defineProperty(this.interaction, 'user', {
+        value: user
+      })
 
       switch (reaction.emoji.name) {
         case "⏭":
