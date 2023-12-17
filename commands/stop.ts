@@ -14,6 +14,10 @@ export default {
 
     queue.stop();
 
-    interaction.reply({ content: i18n.__mf("stop.result", { author: interaction.user.id }) }).catch(console.error);
+    interaction.reply({ content: i18n.__mf("stop.result", { author: interaction.user.id }) }).then(() =>
+    setTimeout(async () => {
+      await interaction.deleteReply().catch(console.error);
+    }, 5000)
+  ).catch(console.error);
   }
 };

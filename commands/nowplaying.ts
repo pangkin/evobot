@@ -19,7 +19,7 @@ export default {
     let nowPlaying = new EmbedBuilder()
       .setTitle(i18n.__("nowplaying.embedTitle"))
       .setDescription(`${song.title}\n${song.url}`)
-      .setColor("#F8AA2A");
+      .setColor(0xfa4d4d);
 
     if (song.duration > 0) {
       nowPlaying.addFields({
@@ -40,6 +40,10 @@ export default {
       });
     }
 
-    return interaction.reply({ embeds: [nowPlaying] });
+    return interaction.reply({ embeds: [nowPlaying] }).then(() =>
+      setTimeout(async () => {
+        await interaction.deleteReply().catch(console.error);
+      }, 5000)
+    );
   }
 };

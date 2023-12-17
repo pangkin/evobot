@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+import { ChatInputCommandInteraction, SlashCommandBuilder, TextChannel } from "discord.js";
 import { bot } from "../index";
 import { i18n } from "../utils/i18n";
 import { canModifyQueue } from "../utils/queue";
@@ -17,8 +17,24 @@ export default {
     if (queue.player.unpause()) {
       const content = { content: i18n.__mf("resume.resultNotPlaying", { author: interaction.user.id }) };
 
-      if (interaction.replied) interaction.followUp(content).catch(console.error);
-      else interaction.reply(content).catch(console.error);
+      if (interaction.replied)
+        (interaction.channel as TextChannel)
+          .followUp(content)
+          .then((m) =>
+            setTimeout(async () => {
+              await m.delete().catch(console.error);
+            }, 5000)
+          )
+          .catch(console.error);
+      else
+        interaction
+          .reply(content)
+          .then((m) =>
+            setTimeout(async () => {
+              await interaction.deleteReply();
+            }, 5000)
+          )
+          .catch(console.error);
 
       return true;
     }

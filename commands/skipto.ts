@@ -46,6 +46,11 @@ export default {
 
     interaction
       .reply({ content: i18n.__mf("skipto.result", { author: interaction.user.id, arg: playlistSlotArg - 1 }) })
+      .then(() =>
+        setTimeout(async () => {
+          await interaction.deleteReply().catch(console.error);
+        }, 5000)
+      )
       .catch(console.error);
   }
 };

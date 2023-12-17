@@ -15,6 +15,13 @@ export default {
 
     queue.player.stop(true);
 
-    interaction.reply({ content: i18n.__mf("skip.result", { author: interaction.user.id }) }).catch(console.error);
+    return interaction
+      .reply({ content: i18n.__mf("skip.result", { author: interaction.user.id }) })
+      .then(() =>
+        setTimeout(async () => {
+          await interaction.deleteReply().catch(console.error);
+        }, 5000)
+      )
+      .catch(console.error);
   }
 };
