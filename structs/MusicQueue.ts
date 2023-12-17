@@ -216,13 +216,14 @@ export class MusicQueue {
   private async sendPlayingMessage(newState: any) {
     const song = (newState.resource as AudioResource<Song>).metadata;
     const resource = newState.resource as AudioResource<Song>;
+    
+    if (!this.playingMessage) {
+      this.playingMessage = await this.textChannel.send({
+        content: this.createSongListMessage(),
+        embeds: [this.createSongInfoEmbed(resource)]
+      });
 
     try {
-      if (!this.playingMessage) {
-        this.playingMessage = await this.textChannel.send({
-          content: this.createSongListMessage(),
-          embeds: [this.createSongInfoEmbed(resource)]
-        });
         await this.playingMessage.react("⏭");
         await this.playingMessage.react("⏯");
         await this.playingMessage.react("🔇");
