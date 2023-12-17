@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder, TextChannel } from "discord.js";
+import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import { bot } from "../index";
 import { i18n } from "../utils/i18n";
 import { canModifyQueue } from "../utils/queue";
@@ -28,9 +28,9 @@ export default {
     const content = { content: i18n.__mf("shuffle.result", { author: interaction.user.id }) };
 
     if (interaction.replied)
-      (interaction.channel as TextChannel)
+      interaction
         .followUp(content)
-        .then((m) =>
+        .then((m: any) =>
           setTimeout(async () => {
             await m.delete().catch(console.error);
           }, 5000)
@@ -39,7 +39,7 @@ export default {
     else
       interaction
         .reply(content)
-        .then((m) =>
+        .then(() =>
           setTimeout(async () => {
             await interaction.deleteReply();
           }, 5000)
