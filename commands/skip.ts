@@ -2,6 +2,7 @@ import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import { bot } from "../index";
 import { i18n } from "../utils/i18n";
 import { canModifyQueue } from "../utils/queue";
+import { safeReply } from "../utils/safeReply";
 
 export default {
   data: new SlashCommandBuilder().setName("skip").setDescription(i18n.__("skip.description")),
@@ -15,13 +16,6 @@ export default {
 
     queue.player.stop(true);
 
-    return interaction
-      .reply({ content: i18n.__mf("skip.result", { author: interaction.user.id }) })
-      .then(() =>
-        setTimeout(async () => {
-          await interaction.deleteReply().catch(console.error);
-        }, 5000)
-      )
-      .catch(console.error);
+    safeReply(interaction, i18n.__mf("skip.result", { author: interaction.user.id }));
   }
 };

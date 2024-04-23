@@ -1,6 +1,6 @@
 {
   "name": "evobot",
-  "version": "2.8.1",
+  "version": "2.9.0",
   "description": "Discord music bot built with discord.js",
   "main": "index.ts",
   "author": "Erit Islami <eritislami@gmail.com>",
@@ -23,7 +23,7 @@
     "@discordjs/voice": "^0.16.1",
     "array-move": "^3.0.1",
     "discord.js": "^14.14.1",
-    "dotenv": "^16.3.1",
+    "dotenv": "^16.4.5",
     "ffmpeg-static": "^4.4.1",
     "i18n": "^0.15.1",
     "lyrics-finder": "^21.0.5",
@@ -33,12 +33,12 @@
     "youtube-sr": "~4.3.0"
   },
   "devDependencies": {
-    "@types/i18n": "^0.13.10",
-    "@types/node": "^20.10.0",
+    "@types/i18n": "^0.13.11",
+    "@types/node": "^20.12.7",
     "cz-conventional-changelog": "^3.0.1",
     "nodemon": "^2.0.22",
-    "prettier": "^3.1.0",
-    "ts-node": "^10.9.1"
+    "prettier": "^3.2.5",
+    "ts-node": "^10.9.2"
   },
   "optionalDependencies": {
     "@discordjs/opus": "^0.9.0",

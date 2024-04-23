@@ -1,7 +1,8 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+simport { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import { bot } from "../index";
 import { i18n } from "../utils/i18n";
 import { canModifyQueue } from "../utils/queue";
+import { safeReply } from "../utils/safeReply";
 
 export default {
   data: new SlashCommandBuilder().setName("shuffle").setDescription(i18n.__("shuffle.description")),
@@ -23,27 +24,8 @@ export default {
 
     queue.songs = songs;
 
-    queue.editPlayingMessage();
+    const content = i18n.__mf("shuffle.result", { author: interaction.user.id });
 
-    const content = { content: i18n.__mf("shuffle.result", { author: interaction.user.id }) };
-
-    if (interaction.replied)
-      interaction
-        .followUp(content)
-        .then((m: any) =>
-          setTimeout(async () => {
-            await m.delete().catch(console.error);
-          }, 5000)
-        )
-        .catch(console.error);
-    else
-      interaction
-        .reply(content)
-        .then(() =>
-          setTimeout(async () => {
-            await interaction.deleteReply();
-          }, 5000)
-        )
-        .catch(console.error);
+    safeReply(interaction, content);
   }
 };
